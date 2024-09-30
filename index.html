@@ -67,7 +67,36 @@
         const analyzeBtn = document.getElementById('analyze');
         const resultDiv = document.getElementById('result');
 
-        async function analyzeSign() {
+        function takePhoto() {
+            photoCanvas.width = camera.videoWidth;
+            photoCanvas.height = camera.videoHeight;
+            photoCanvas.getContext('2d').drawImage(camera, 0, 0);
+            photoCanvas.style.display = 'block';
+            camera.style.display = 'none';
+            takePhotoBtn.style.display = 'none';
+            analyzeBtn.style.display = 'block';
+        }
+
+        fileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    const img = new Image();
+                    img.onload = () => {
+                        photoCanvas.width = img.width;
+                        photoCanvas.height = img.height;
+                        photoCanvas.getContext('2d').drawImage(img, 0, 0);
+                        photoCanvas.style.display = 'block';
+                        analyzeBtn.style.display = 'block';
+                    };
+                    img.src = event.target.result;
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+async function analyzeSign() {
     console.log('Analyze Sign function called');
     const imageData = photoCanvas.toDataURL('image/jpeg').split(',')[1];
     console.log('Image data prepared');
@@ -98,41 +127,6 @@
         resultDiv.className = "";
     }
 }
-        function takePhoto() {
-            photoCanvas.width = camera.videoWidth;
-            photoCanvas.height = camera.videoHeight;
-            photoCanvas.getContext('2d').drawImage(camera, 0, 0);
-            photoCanvas.style.display = 'block';
-            camera.style.display = 'none';
-            takePhotoBtn.style.display = 'none';
-            analyzeBtn.style.display = 'block';
-        }
-
-        fileInput.addEventListener('change', (e) => {
-            const file = e.target.files[0];
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = (event) => {
-                    const img = new Image();
-                    img.onload = () => {
-                        photoCanvas.width = img.width;
-                        photoCanvas.height = img.height;
-                        photoCanvas.getContext('2d').drawImage(img, 0, 0);
-                        photoCanvas.style.display = 'block';
-                        analyzeBtn.style.display = 'block';
-                    };
-                    img.src = event.target.result;
-                };
-                reader.readAsDataURL(file);
-            }
-        });
-
-        function analyzeSign() {
-            // Simulate AI analysis
-            const canPark = Math.random() < 0.5;
-            resultDiv.textContent = canPark ? "YES" : "NO";
-            resultDiv.className = canPark ? "yes" : "no";
-        }
 
         if (window.isSecureContext) {
             startCamera();
