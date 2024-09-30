@@ -1,130 +1,43 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Parking Sign Reader</title>
-    <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#f0f0f0">
-    <link rel="apple-touch-icon" href="icon-192x192.png">
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            height: 100vh;
-            margin: 0;
-            background-color: #f0f0f0;
-        }
-        #camera, #photo, #fileInput {
-            width: 300px;
-            height: 225px;
-            border: 1px solid #ccc;
-            margin-bottom: 20px;
-        }
-        #result {
-            font-size: 48px;
-            font-weight: bold;
-            margin-top: 20px;
-        }
-        .yes { color: green; }
-        .no { color: red; }
-        button {
-            font-size: 18px;
-            padding: 10px 20px;
-            margin: 10px;
-        }
-    </style>
+    <!-- ... (previous head content) ... -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/1.6.7/axios.min.js"></script>
 </head>
 <body>
-    <video id="camera" autoplay style="display:none;"></video>
-    <canvas id="photo" style="display:none;"></canvas>
-    <input type="file" id="fileInput" accept="image/*" capture="environment">
-    <button id="takePhoto" style="display:none;">Take Photo</button>
-    <button id="analyze" style="display:none;">Analyze Sign</button>
-    <div id="result"></div>
+    <!-- ... (previous body content) ... -->
 
     <script>
-        // Check if service worker is supported
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('/service-worker.js')
-                    .then(registration => {
-                        console.log('ServiceWorker registration successful with scope: ', registration.scope);
-                    }, err => {
-                        console.log('ServiceWorker registration failed: ', err);
-                    });
-            });
-        }
+        // ... (previous JavaScript code) ...
 
-        const camera = document.getElementById('camera');
-        const photoCanvas = document.getElementById('photo');
-        const fileInput = document.getElementById('fileInput');
-        const takePhotoBtn = document.getElementById('takePhoto');
-        const analyzeBtn = document.getElementById('analyze');
-        const resultDiv = document.getElementById('result');
+        async function analyzeSign() {
+            const imageData = photoCanvas.toDataURL('image/jpeg').split(',')[1];
+            const apiKey = 'AIzaSyBaCRZeZT9Nx78RmckTH8FGfDB_f7hKqNE'; // Replace with your actual API key
+            const apiUrl = `https://vision.googleapis.com/v1/images:annotate?key=${apiKey}`;
 
-        async function startCamera() {
             try {
-                const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
-                camera.srcObject = stream;
-                camera.style.display = 'block';
-                fileInput.style.display = 'none';
-                takePhotoBtn.style.display = 'block';
-            } catch (err) {
-                console.error("Error accessing camera:", err);
-                alert("Camera access failed. You can still upload an image.");
-                fileInput.style.display = 'block';
+                const response = await axios.post(apiUrl, {
+                    requests: [{
+                        image: { content: imageData },
+                        features: [{ type: 'TEXT_DETECTION' }]
+                    }]
+                });
+
+                const detectedText = response.data.responses[0].textAnnotations[0].description;
+                console.log('Detected text:', detectedText);
+
+                // Simple parking rule check (customize based on your needs)
+                const canPark = !detectedText.toLowerCase().includes('no parking');
+                resultDiv.textContent = canPark ? "YES" : "NO";
+                resultDiv.className = canPark ? "yes" : "no";
+            } catch (error) {
+                console.error('Error analyzing image:', error);
+                resultDiv.textContent = "Error analyzing image";
+                resultDiv.className = "";
             }
         }
 
-        function takePhoto() {
-            photoCanvas.width = camera.videoWidth;
-            photoCanvas.height = camera.videoHeight;
-            photoCanvas.getContext('2d').drawImage(camera, 0, 0);
-            photoCanvas.style.display = 'block';
-            camera.style.display = 'none';
-            takePhotoBtn.style.display = 'none';
-            analyzeBtn.style.display = 'block';
-        }
-
-        fileInput.addEventListener('change', (e) => {
-            const file = e.target.files[0];
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = (event) => {
-                    const img = new Image();
-                    img.onload = () => {
-                        photoCanvas.width = img.width;
-                        photoCanvas.height = img.height;
-                        photoCanvas.getContext('2d').drawImage(img, 0, 0);
-                        photoCanvas.style.display = 'block';
-                        analyzeBtn.style.display = 'block';
-                    };
-                    img.src = event.target.result;
-                };
-                reader.readAsDataURL(file);
-            }
-        });
-
-        function analyzeSign() {
-            // Simulate AI analysis
-            const canPark = Math.random() < 0.5;
-            resultDiv.textContent = canPark ? "YES" : "NO";
-            resultDiv.className = canPark ? "yes" : "no";
-        }
-
-        if (window.isSecureContext) {
-            startCamera();
-        } else {
-            console.warn("Not in a secure context, camera access may be restricted");
-            fileInput.style.display = 'block';
-        }
-
-        takePhotoBtn.addEventListener('click', takePhoto);
-        analyzeBtn.addEventListener('click', analyzeSign);
+        // ... (rest of the JavaScript code) ...
     </script>
 </body>
 </html>
