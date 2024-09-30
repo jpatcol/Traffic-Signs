@@ -36,9 +36,9 @@
             padding: 10px 20px;
             margin: 10px;
         }
-         
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/1.6.7/axios.min.js"></script>
+
 </head>
 <body>
     <video id="camera" autoplay style="display:none;"></video>
@@ -67,6 +67,20 @@
         const takePhotoBtn = document.getElementById('takePhoto');
         const analyzeBtn = document.getElementById('analyze');
         const resultDiv = document.getElementById('result');
+
+        async function startCamera() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+                camera.srcObject = stream;
+                camera.style.display = 'block';
+                fileInput.style.display = 'none';
+                takePhotoBtn.style.display = 'block';
+            } catch (err) {
+                console.error("Error accessing camera:", err);
+                alert("Camera access failed. You can still upload an image.");
+                fileInput.style.display = 'block';
+            }
+        }
 
         function takePhoto() {
             photoCanvas.width = camera.videoWidth;
@@ -97,37 +111,32 @@
             }
         });
 
-async function analyzeSign() {
-    console.log('Analyze Sign function called');
-    const imageData = photoCanvas.toDataURL('image/jpeg').split(',')[1];
-    console.log('Image data prepared');
-    const apiKey = 'YOUR_API_KEY'; // Make sure this is your actual API key
-    const apiUrl = `https://vision.googleapis.com/v1/images:annotate?key=${apiKey}`;
-    console.log('Using API URL:', apiUrl);
+        async function analyzeSign() {
+            const imageData = photoCanvas.toDataURL('image/jpeg').split(',')[1];
+            const apiKey = 'YOUR_API_KEY'; // Replace with your actual API key
+            const apiUrl = `https://vision.googleapis.com/v1/images:annotate?key=${apiKey}`;
 
-    try {
-        console.log('Sending request to Google Cloud Vision API');
-        const response = await axios.post(apiUrl, {
-            requests: [{
-                image: { content: imageData },
-                features: [{ type: 'TEXT_DETECTION' }]
-            }]
-        });
-        console.log('Received response from API:', response);
+            try {
+                const response = await axios.post(apiUrl, {
+                    requests: [{
+                        image: { content: imageData },
+                        features: [{ type: 'TEXT_DETECTION' }]
+                    }]
+                });
 
-        const detectedText = response.data.responses[0].textAnnotations[0].description;
-        console.log('Detected text:', detectedText);
+                const detectedText = response.data.responses[0].textAnnotations[0].description;
+                console.log('Detected text:', detectedText);
 
-        // Simple parking rule check
-        const canPark = !detectedText.toLowerCase().includes('no parking');
-        resultDiv.textContent = canPark ? "YES" : "NO";
-        resultDiv.className = canPark ? "yes" : "no";
-    } catch (error) {
-        console.error('Error analyzing image:', error);
-        resultDiv.textContent = "Error analyzing image";
-        resultDiv.className = "";
-    }
-}
+                // Simple parking rule check (customize based on your needs)
+                const canPark = !detectedText.toLowerCase().includes('no parking');
+                resultDiv.textContent = canPark ? "YES" : "NO";
+                resultDiv.className = canPark ? "yes" : "no";
+            } catch (error) {
+                console.error('Error analyzing image:', error);
+                resultDiv.textContent = "Error analyzing image";
+                resultDiv.className = "";
+            }
+        }
 
         if (window.isSecureContext) {
             startCamera();
