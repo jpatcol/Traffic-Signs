@@ -10,32 +10,37 @@
     <script>
         // ... (previous JavaScript code) ...
 
-        async function analyzeSign() {
-            const imageData = photoCanvas.toDataURL('image/jpeg').split(',')[1];
-            const apiKey = 'AIzaSyBaCRZeZT9Nx78RmckTH8FGfDB_f7hKqNE'; // Replace with your actual API key
-            const apiUrl = `https://vision.googleapis.com/v1/images:annotate?key=${apiKey}`;
+       async function analyzeSign() {
+    console.log('Analyze Sign function called');
+    const imageData = photoCanvas.toDataURL('image/jpeg').split(',')[1];
+    console.log('Image data prepared');
+    const apiKey = 'YOUR_API_KEY'; // Make sure this is your actual API key
+    const apiUrl = `https://vision.googleapis.com/v1/images:annotate?key=${apiKey}`;
+    console.log('Using API URL:', apiUrl);
 
-            try {
-                const response = await axios.post(apiUrl, {
-                    requests: [{
-                        image: { content: imageData },
-                        features: [{ type: 'TEXT_DETECTION' }]
-                    }]
-                });
+    try {
+        console.log('Sending request to Google Cloud Vision API');
+        const response = await axios.post(apiUrl, {
+            requests: [{
+                image: { content: imageData },
+                features: [{ type: 'TEXT_DETECTION' }]
+            }]
+        });
+        console.log('Received response from API:', response);
 
-                const detectedText = response.data.responses[0].textAnnotations[0].description;
-                console.log('Detected text:', detectedText);
+        const detectedText = response.data.responses[0].textAnnotations[0].description;
+        console.log('Detected text:', detectedText);
 
-                // Simple parking rule check (customize based on your needs)
-                const canPark = !detectedText.toLowerCase().includes('no parking');
-                resultDiv.textContent = canPark ? "YES" : "NO";
-                resultDiv.className = canPark ? "yes" : "no";
-            } catch (error) {
-                console.error('Error analyzing image:', error);
-                resultDiv.textContent = "Error analyzing image";
-                resultDiv.className = "";
-            }
-        }
+        // Simple parking rule check
+        const canPark = !detectedText.toLowerCase().includes('no parking');
+        resultDiv.textContent = canPark ? "YES" : "NO";
+        resultDiv.className = canPark ? "yes" : "no";
+    } catch (error) {
+        console.error('Error analyzing image:', error);
+        resultDiv.textContent = "Error analyzing image";
+        resultDiv.className = "";
+    }
+}
 
         // ... (rest of the JavaScript code) ...
     </script>
